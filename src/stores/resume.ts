@@ -79,28 +79,21 @@ export const useResumesStore = create<ResumesStore>()(
         })
       )
 
-      let uploadedResume: Resume | null = null
       try {
-        const { file } = await storeFile(resume)
-        uploadedResume = file
+        await storeFile(resume)
       } catch (e) {
         console.log(e)
-      }
-
-      if (uploadedResume) {
-        set(
-          produce((draft) => {
-            draft.state.resumes = deleteOverlappingResume([
-              uploadedResume,
-              ...draft.state.resumes,
-            ])
-          })
-        )
       }
 
       set(
         produce((draft) => {
           draft.state.isUploading = false
+        })
+      )
+
+      set(
+        produce(async (draft) => {
+          await draft.fetchResumes()
         })
       )
     },

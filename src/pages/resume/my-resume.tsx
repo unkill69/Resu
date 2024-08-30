@@ -171,7 +171,10 @@ export default function Home() {
           {(fields, { add, remove }) => (
             <>
               {fields.map((field) => (
-                <div key={field.key} className="w-full flex flex-col gap-1">
+                <div
+                  key={`position-${field.key}`}
+                  className="w-full flex flex-col gap-1"
+                >
                   <Form.Item
                     {...field}
                     label="Name"
@@ -236,7 +239,10 @@ export default function Home() {
           {(fields, { add, remove }) => (
             <>
               {fields.map((field) => (
-                <div key={field.key} className="w-full flex flex-col gap-1">
+                <div
+                  key={`experience-${field.key}`}
+                  className="w-full flex flex-col gap-1"
+                >
                   <Form.Item
                     {...field}
                     label="Position"
@@ -323,9 +329,6 @@ export default function Home() {
               {error && <span className="text-red-500 text-base">{error}</span>}
             </>
           )}
-          {/* <Button htmlType="submit" className="w-full PrimaryButton">
-            Submit
-          </Button> */}
         </Form.Item>
       </Form>
       <Divider />

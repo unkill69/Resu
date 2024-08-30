@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 import type { Resume } from '~/types'
 import { Button, Divider } from 'antd'
 import { useRouter } from 'next/router'
 import { ethers } from 'ethers'
+import { getRecentlyMintedPoapForId } from '~/utils'
 
 import { useAccount } from 'wagmi'
 import SkillAttestationList from '~/components/SkillAttestationList'
@@ -19,13 +21,28 @@ export default function ResumeDetails({
 }) {
   const router = useRouter()
   const [isMyResume, setIsMyResume] = useState(false)
+  const [recentlyMintedPoaps, setRecentlyMintedPoaps] = useState([])
   const { address } = useAccount()
+  const [isFetchingPoaps, setIsFetchingPoaps] = useState(false)
 
   useEffect(() => {
     if (address === resume.walletAddress) {
       setIsMyResume(true)
     }
   }, [address])
+
+  useEffect(() => {
+    const getRecentlyMintedPoap = async () => {
+      setIsFetchingPoaps(true)
+      try {
+        const poaps = await getRecentlyMintedPoapForId(resume.walletAddress)
+        setRecentlyMintedPoaps(poaps)
+      } finally {
+        setIsFetchingPoaps(false)
+      }
+    }
+    getRecentlyMintedPoap()
+  }, [resume])
 
   return (
     <div className="w-full">
@@ -106,6 +123,33 @@ export default function ResumeDetails({
           />
         </>
       )}
+      <>
+        <Divider />
+        <div className="flex gap-2">
+          <div className="w-[calc(50%-0.25rem)]">
+            <span className="font-bold">
+              {resume.name}'s recently minted POAPs:
+            </span>
+            {isFetchingPoaps ? (
+              <div>Loading...</div>
+            ) : Boolean(recentlyMintedPoaps.length) ? (
+              <div className="flex gap-2">
+                {recentlyMintedPoaps.map((poap) => (
+                  <Link
+                    key={poap.id}
+                    href={`https://app.poap.xyz/token/${poap.id}`}
+                    target="_blank"
+                  >
+                    <img src={poap.imageUri} className="w-14 h-14" alt="poap" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div>No poaps found</div>
+            )}
+          </div>
+        </div>
+      </>
     </div>
   )
 }
