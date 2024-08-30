@@ -1,20 +1,52 @@
-import { useState, useEffect } from 'react'
-import { Input, Form, Button } from 'antd'
+import { useState, useEffect, useMemo } from 'react'
+import { Input, Form, Button, Divider } from 'antd'
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import { useResumesStore } from '~/stores/resume'
 import type { Resume } from '~/types'
+import ResumeDetails from '~/components/ResumeDetails'
+import CreateSkillAttestation from '~/components/CreateSkillAttestation'
 
 import { useAccount } from 'wagmi'
+import { ethers } from 'ethers'
 
 export default function Home() {
-  const { addResume, fetchResumeById } = useResumesStore()
-  const { myResume, isUploading, isLoading } = useResumesStore(
+  const { addResume, fetchResumes } = useResumesStore()
+  const { resumes, isUploading, isLoading } = useResumesStore(
     (state) => state.state
   )
+  const [signer, setSigner] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [form] = Form.useForm()
+
   const { address } = useAccount()
+  const myResume = useMemo(() => {
+    return resumes.find((resume) => resume.walletAddress === address)
+  }, [resumes, address])
+
+  const connectWallet = async function () {
+    // Check if the ethereum object exists on the window object
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        await window.ethereum.enable()
+        // Instantiate a new ethers provider with Metamask
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+
+        // Get the signer from the ethers provider
+        setSigner(provider.getSigner())
+      } catch (error) {
+        console.error('User rejected request', error)
+      }
+    } else {
+      console.error('Metamask not found')
+    }
+  }
 
   useEffect(() => {
-    fetchResumeById()
+    if (resumes.length === 0) {
+      fetchResumes()
+    }
+    connectWallet()
   }, [])
 
   const onFinish = (value: any) => {
@@ -32,9 +64,31 @@ export default function Home() {
     return <div>Uploading...</div>
   }
 
+  if (myResume && !isEditing) {
+    return (
+      <>
+        <div className="w-full flex justify-end">
+          <Button
+            onClick={() => {
+              setIsEditing(true)
+              form.setFieldsValue(myResume)
+            }}
+          >
+            Edit
+          </Button>
+        </div>
+        <ResumeDetails resume={myResume} />
+        <Divider />
+        {signer && <CreateSkillAttestation signer={signer} />}
+      </>
+    )
+  }
+
+  // TODO: Delete old resume once one is updated
   return (
     <div className="border p-2 block w-[670px]">
       <Form
+        form={form}
         name="basic"
         labelCol={{ span: 3 }}
         wrapperCol={{ span: 20 }}
@@ -202,6 +256,8 @@ export default function Home() {
           </Button>
         </Form.Item>
       </Form>
+      <Divider />
+      {signer && <CreateSkillAttestation signer={signer} />}
     </div>
   )
 }

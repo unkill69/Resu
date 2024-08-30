@@ -5,19 +5,38 @@ import { immer } from 'zustand/middleware/immer'
 import { setUpStorage, storeFile } from '~/helpers/web3Storage'
 import type { Resume } from '~/types'
 
+function deleteOverlappingResume(arr: Resume[]): Resume[] {
+  const addrCounts: { [addr: string]: number } = {}
+  const result: { [addr: string]: Resume } = {}
+
+  // Count occurrences of each key in the array
+  arr.forEach((obj) => {
+    const addr = obj.walletAddress
+    addrCounts[addr] = (addrCounts[addr] || 0) + 1
+
+    // Keep only one occurrence of each key in the result object
+    if (addrCounts[addr] === 1) {
+      result[addr] = obj
+    }
+  })
+
+  // Convert the result object back to an array
+  return Object.values(result)
+}
+
 interface ResumesStore {
   fetchResumes: () => Promise<void>
-  fetchResumeById: (walletAddrToFind: string) => Promise<void>
   addResume: (resume: Resume) => Promise<string>
   state: {
     isLoading: boolean
     isUploading: boolean
     resumes: Resume[]
-    myResume: Resume
   }
 }
 
 const state = {
+  isLoading: false,
+  isUploading: false,
   resumes: [],
 }
 
@@ -39,9 +58,10 @@ export const useResumesStore = create<ResumesStore>()(
       }
 
       if (resumes) {
+        const uniqueResumes = deleteOverlappingResume(resumes)
         set(
           produce((draft) => {
-            draft.state.resumes = resumes || state?.resumes
+            draft.state.resumes = uniqueResumes || state?.resumes
           })
         )
       }
@@ -51,19 +71,6 @@ export const useResumesStore = create<ResumesStore>()(
           draft.state.isLoading = false
         })
       )
-    },
-    fetchResumeById: async (walletAddrToFind: string) => {
-      set((draft) => {
-        draft.state.isLoading = true
-
-        if (draft.state.resumes.length === 0) {
-          draft.fetchResumes()
-        }
-        draft.state.myResume = draft.state.resumes.find(
-          ({ walletAddress }) => walletAddress === walletAddrToFind
-        )
-        draft.state.isLoading = false
-      })
     },
     addResume: async (resume: Resume) => {
       set(
@@ -83,7 +90,10 @@ export const useResumesStore = create<ResumesStore>()(
       if (uploadedResume) {
         set(
           produce((draft) => {
-            draft.state.resumes = [uploadedResume, ...draft.state.resumes]
+            draft.state.resumes = deleteOverlappingResume([
+              uploadedResume,
+              ...draft.state.resumes,
+            ])
           })
         )
       }
