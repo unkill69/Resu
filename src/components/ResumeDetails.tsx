@@ -3,15 +3,18 @@ import { useState, useEffect } from 'react'
 import type { Resume } from '~/types'
 import { Button, Divider } from 'antd'
 import { useRouter } from 'next/router'
+import { ethers } from 'ethers'
 
 import { useAccount } from 'wagmi'
 import SkillAttestationList from '~/components/SkillAttestationList'
 
-export default function ResumeItem({
+export default function ResumeDetails({
   resume,
+  signer,
   showAttestationList = true,
 }: {
   resume: Resume
+  signer: ethers.Signer
   showAttestationList?: boolean
 }) {
   const router = useRouter()
@@ -48,7 +51,7 @@ export default function ResumeItem({
         </div>
       </div>
       <div>
-        <span className="font-bold">Education </span>
+        <span className="font-bold">Education</span>
         {resume.educations?.map((education, index) => (
           <div key={index} className="flex gap-1">
             <p>•</p>
@@ -72,7 +75,7 @@ export default function ResumeItem({
       </div>
 
       <div>
-        <span className="font-bold">Experience: </span>
+        <span className="font-bold">Experience</span>
         {resume.experiences?.map((experience, index) => (
           <div key={index} className="flex gap-1">
             <p>•</p>
@@ -97,7 +100,10 @@ export default function ResumeItem({
       {showAttestationList && (
         <>
           <Divider />
-          <SkillAttestationList address={resume.walletAddress} />
+          <SkillAttestationList
+            attestAddress={resume.walletAddress}
+            signer={signer}
+          />
         </>
       )}
     </div>
