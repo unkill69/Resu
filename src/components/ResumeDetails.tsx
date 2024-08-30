@@ -7,7 +7,13 @@ import { useRouter } from 'next/router'
 import { useAccount } from 'wagmi'
 import SkillAttestationList from '~/components/SkillAttestationList'
 
-export default function ResumeItem({ resume }: { resume: Resume }) {
+export default function ResumeItem({
+  resume,
+  showAttestationList = true,
+}: {
+  resume: Resume
+  showAttestationList?: boolean
+}) {
   const router = useRouter()
   const [isMyResume, setIsMyResume] = useState(false)
   const { address } = useAccount()
@@ -21,7 +27,7 @@ export default function ResumeItem({ resume }: { resume: Resume }) {
   return (
     <div className="w-full">
       <div className="font-bold text-center text-lg mb-2">{resume.name}</div>
-      {!isMyResume && (
+      {!isMyResume && address && (
         <div className="w-full flex justify-end">
           <Button
             className="PrimaryButton"
@@ -88,8 +94,12 @@ export default function ResumeItem({ resume }: { resume: Resume }) {
           </div>
         ))}
       </div>
-      <Divider />
-      <SkillAttestationList />
+      {showAttestationList && (
+        <>
+          <Divider />
+          <SkillAttestationList address={resume.walletAddress} />
+        </>
+      )}
     </div>
   )
 }
